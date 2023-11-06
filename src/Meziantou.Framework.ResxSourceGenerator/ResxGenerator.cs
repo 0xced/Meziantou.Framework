@@ -141,7 +141,8 @@ public sealed class ResxGenerator : IIncrementalGenerator
         sb.AppendLine("        private static global::System.Resources.ResourceManager? resourceMan;");
         sb.AppendLine();
         sb.AppendLine("        public " + className + "() { }");
-        sb.AppendLine(@"
+        sb.AppendLine($$"""
+
         /// <summary>
         ///   Returns the cached ResourceManager instance used by this class.
         /// </summary>
@@ -150,9 +151,9 @@ public sealed class ResxGenerator : IIncrementalGenerator
         {
             get
             {
-                if (resourceMan is null) 
+                if (resourceMan is null)
                 {
-                    resourceMan = new global::System.Resources.ResourceManager(""" + resourceName + @""", typeof(" + className + @").Assembly);
+                    resourceMan = new global::System.Resources.ResourceManager("{{resourceName}}", typeof({{className}}).Assembly);
                 }
 
                 return resourceMan;
@@ -166,8 +167,7 @@ public sealed class ResxGenerator : IIncrementalGenerator
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
         public static global::System.Globalization.CultureInfo? Culture { get; set; }
 
-        " + AppendNotNullIfNotNull("defaultValue") + @"
-        public static object? GetObject(global::System.Globalization.CultureInfo? culture, string name, object? defaultValue)
+        {{ReturnNotNullIfNotNull("defaultValue")}}public static object? GetObject(global::System.Globalization.CultureInfo? culture, string name, object? defaultValue)
         {
             culture ??= Culture;
             object? obj = ResourceManager.GetObject(name, culture);
@@ -178,38 +178,24 @@ public sealed class ResxGenerator : IIncrementalGenerator
 
             return obj;
         }
-        
+
         public static object? GetObject(global::System.Globalization.CultureInfo? culture, string name)
-        {
-            return GetObject(culture: culture, name: name, defaultValue: null);
-        }
+            => GetObject(culture: culture, name: name, defaultValue: null);
 
         public static object? GetObject(string name)
-        {
-            return GetObject(culture: null, name: name, defaultValue: null);
-        }
+            => GetObject(culture: null, name: name, defaultValue: null);
 
-        " + AppendNotNullIfNotNull("defaultValue") + @"
-        public static object? GetObject(string name, object? defaultValue)
-        {
-            return GetObject(culture: null, name: name, defaultValue: defaultValue);
-        }
+        {{ReturnNotNullIfNotNull("defaultValue")}}public static object? GetObject(string name, object? defaultValue)
+            => GetObject(culture: null, name: name, defaultValue: defaultValue);
 
         public static global::System.IO.Stream? GetStream(string name)
-        {
-            return GetStream(culture: null, name: name);
-        }
+            => GetStream(culture: null, name: name);
 
         public static global::System.IO.Stream? GetStream(global::System.Globalization.CultureInfo? culture, string name)
-        {
-            culture ??= Culture;
-            return ResourceManager.GetStream(name, culture);
-        }
+            => ResourceManager.GetStream(name, culture ?? Culture);
 
         public static string? GetString(global::System.Globalization.CultureInfo? culture, string name)
-        {
-            return GetString(culture: culture, name: name, args: null);
-        }
+            => GetString(culture: culture, name: name, args: null);
 
         public static string? GetString(global::System.Globalization.CultureInfo? culture, string name, params object?[]? args)
         {
@@ -229,31 +215,20 @@ public sealed class ResxGenerator : IIncrementalGenerator
                 return str;
             }
         }
-        
-        public static string? GetString(string name, params object?[]? args)
-        {
-            return GetString(culture: null, name: name, args: args);
-        }
 
-        " + AppendNotNullIfNotNull("defaultValue") + @"        
-        public static string? GetString(string name, string? defaultValue)
-        {
-            return GetStringWithDefault(culture: null, name: name, defaultValue: defaultValue, args: null);
-        }
+        public static string? GetString(string name, params object?[]? args)
+            => GetString(culture: null, name: name, args: args);
+
+        {{ReturnNotNullIfNotNull("defaultValue")}}public static string? GetString(string name, string? defaultValue)
+            => GetStringWithDefault(culture: null, name: name, defaultValue: defaultValue, args: null);
 
         public static string? GetString(string name)
-        {
-            return GetStringWithDefault(culture: null, name: name, defaultValue: null, args: null);
-        }
-        
-        " + AppendNotNullIfNotNull("defaultValue") + @"
-        public static string? GetStringWithDefault(global::System.Globalization.CultureInfo? culture, string name, string? defaultValue)
-        {
-            return GetStringWithDefault(culture: culture, name: name, defaultValue: defaultValue, args: null);
-        }
+            => GetStringWithDefault(culture: null, name: name, defaultValue: null, args: null);
 
-        " + AppendNotNullIfNotNull("defaultValue") + @"
-        public static string? GetStringWithDefault(global::System.Globalization.CultureInfo? culture, string name, string? defaultValue, params object?[]? args)
+        {{ReturnNotNullIfNotNull("defaultValue")}}public static string? GetStringWithDefault(global::System.Globalization.CultureInfo? culture, string name, string? defaultValue)
+            => GetStringWithDefault(culture: culture, name: name, defaultValue: defaultValue, args: null);
+
+        {{ReturnNotNullIfNotNull("defaultValue")}}public static string? GetStringWithDefault(global::System.Globalization.CultureInfo? culture, string name, string? defaultValue, params object?[]? args)
         {
             culture ??= Culture;
             string? str = ResourceManager.GetString(name, culture);
@@ -279,18 +254,13 @@ public sealed class ResxGenerator : IIncrementalGenerator
             }
         }
 
-        " + AppendNotNullIfNotNull("defaultValue") + @"
-        public static string? GetStringWithDefault(string name, string? defaultValue, params object?[]? args)
-        {
-            return GetStringWithDefault(culture: null, name: name, defaultValue: defaultValue, args: args);
-        }
+        {{ReturnNotNullIfNotNull("defaultValue")}}public static string? GetStringWithDefault(string name, string? defaultValue, params object?[]? args)
+            => GetStringWithDefault(culture: null, name: name, defaultValue: defaultValue, args: args);
 
-        " + AppendNotNullIfNotNull("defaultValue") + @"
-        public static string? GetStringWithDefault(string name, string? defaultValue)
-        {
-            return GetStringWithDefault(culture: null, name: name, defaultValue: defaultValue, args: null);
-        }
-");
+        {{ReturnNotNullIfNotNull("defaultValue")}}public static string? GetStringWithDefault(string name, string? defaultValue)
+            => GetStringWithDefault(culture: null, name: name, defaultValue: defaultValue, args: null);
+
+""");
 
         foreach (var entry in entries.OrderBy(e => e.Name, StringComparer.Ordinal))
         {
@@ -310,18 +280,14 @@ public sealed class ResxGenerator : IIncrementalGenerator
                     summary.Add(new XElement("para", $"Value: \"{entry.Value}\"."));
                 }
 
-                var comment = summary.ToString().Replace(Environment.NewLine, Environment.NewLine + "       /// ", StringComparison.Ordinal);
+                var comment = summary.ToString().Replace(Environment.NewLine, Environment.NewLine + "        /// ", StringComparison.Ordinal);
 
-                sb.AppendLine(@"
-        /// " + comment + @"
-        public static string? @" + ToCSharpNameIdentifier(entry.Name) + @"
-        {
-            get
-            {
-                return GetString(""" + entry.Name + @""");
-            }
-        }
-");
+                sb.AppendLine($$"""
+        /// {{comment}}
+        public static string? @{{ToCSharpNameIdentifier(entry.Name)}}
+            => GetString("{{entry.Name}}");
+
+""");
 
                 if (entry.Value != null)
                 {
@@ -337,35 +303,29 @@ public sealed class ResxGenerator : IIncrementalGenerator
                         var inParams = string.Join(", ", Enumerable.Range(0, args + 1).Select(arg => "object? arg" + arg.ToString(CultureInfo.InvariantCulture)));
                         var callParams = string.Join(", ", Enumerable.Range(0, args + 1).Select(arg => "arg" + arg.ToString(CultureInfo.InvariantCulture)));
 
-                        sb.AppendLine(@"
-        /// " + comment + @"
-        public static string? Format" + ToCSharpNameIdentifier(entry.Name) + "(global::System.Globalization.CultureInfo? provider, " + inParams + @")
-        {
-            return GetString(provider, """ + entry.Name + "\", " + callParams + @");
-        }
-");
+                        sb.AppendLine($$"""
+        /// {{comment}}
+        public static string? Format{{ToCSharpNameIdentifier(entry.Name)}}(global::System.Globalization.CultureInfo? provider, {{inParams}})
+            => GetString(provider, "{{entry.Name}}", {{callParams}});
 
-                        sb.AppendLine(@"
-        /// " + comment + @"
-        public static string? Format" + ToCSharpNameIdentifier(entry.Name) + "(" + inParams + @")
-        {
-            return GetString(""" + entry.Name + "\", " + callParams + @");
-        }
-");
+""");
+
+                        sb.AppendLine($$"""
+        /// {{comment}}
+        public static string? Format{{ToCSharpNameIdentifier(entry.Name)}}({{inParams}})
+            => GetString("{{entry.Name}}", {{callParams}});
+
+""");
                     }
                 }
             }
             else
             {
-                sb.AppendLine(@"
-        public static global::" + entry.FullTypeName + "? @" + ToCSharpNameIdentifier(entry.Name) + @"
-        {
-            get
-            {
-                return (global::" + entry.FullTypeName + @"?)GetObject(""" + entry.Name + @""");
-            }
-        }
-");
+                sb.AppendLine($$"""
+        public static global::{{entry.FullTypeName}}? @{{ToCSharpNameIdentifier(entry.Name)}}
+            => (global::{{entry.FullTypeName}}?)GetObject("{{entry.Name}}");
+
+""");
             }
         }
         sb.AppendLine("    }");
@@ -389,12 +349,12 @@ public sealed class ResxGenerator : IIncrementalGenerator
         }
         return sb.ToString();
 
-        string? AppendNotNullIfNotNull(string paramName)
+        string? ReturnNotNullIfNotNull(string paramName)
         {
             if (!enableNullableAttributes)
                 return null;
 
-            return "[return: global::System.Diagnostics.CodeAnalysis.NotNullIfNotNullAttribute(\"" + paramName + "\")]\n";
+            return "[return: global::System.Diagnostics.CodeAnalysis.NotNullIfNotNullAttribute(\"" + paramName + "\")]\n        ";
         }
     }
 
