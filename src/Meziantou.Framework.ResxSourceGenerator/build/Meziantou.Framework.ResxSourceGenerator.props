@@ -3,9 +3,12 @@
     <!-- Keep in sync with ResxGenerator.cs -->
     <CompilerVisibleProperty Include="ProjectDir" />
     <CompilerVisibleProperty Include="RootNamespace" />
+    <CompilerVisibleProperty Include="DefaultResourcesNamespace" />
+    <CompilerVisibleProperty Include="DefaultResourcesUseInstanceMembers" />
 
     <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="Namespace" />
     <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="ClassName" />
     <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="ResourceName" />
+    <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="UseInstanceMembers" />
   </ItemGroup>
 </Project>

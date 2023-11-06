@@ -74,6 +74,8 @@ public sealed class ResxGenerator : IIncrementalGenerator
             var namespaceConfiguration = GetMetadataValue(context, options, "Namespace", "DefaultResourcesNamespace", resxGroug);
             var resourceNameConfiguration = GetMetadataValue(context, options, "ResourceName", globalName: null, resxGroug);
             var classNameConfiguration = GetMetadataValue(context, options, "ClassName", globalName: null, resxGroug);
+            var useInstanceMembersString = GetMetadataValue(context, options, "UseInstanceMembers", "DefaultResourcesUseInstanceMembers", resxGroug);
+            var useInstanceMembers = bool.TryParse(useInstanceMembersString, out var useInstanceMembersValue) && useInstanceMembersValue;
 
             var rootNamespace = rootNamespaceConfiguration ?? assemblyName ?? "";
             var projectDir = projectDirConfiguration ?? assemblyName ?? "";
@@ -113,19 +115,22 @@ public sealed class ResxGenerator : IIncrementalGenerator
 // Namespace: {ns}
 // ResourceName: {resourceName}
 // ClassName: {className}
+// UseInstanceMembers: {useInstanceMembers}
 ";
 
             if (resourceName != null && entries != null)
             {
-                content += GenerateCode(ns, className, resourceName, entries, supportNullableReferenceTypes);
+                content += GenerateCode(ns, className, resourceName, entries, supportNullableReferenceTypes, useInstanceMembers);
             }
 
             context.AddSource($"{Path.GetFileName(resxGroug.Key)}.resx.g.cs", SourceText.From(content, Encoding.UTF8));
         }
     }
 
-    private static string GenerateCode(string? ns, string className, string resourceName, List<ResxEntry> entries, bool enableNullableAttributes)
+    private static string GenerateCode(string? ns, string className, string resourceName, List<ResxEntry> entries, bool enableNullableAttributes, bool useInstanceMembers)
     {
+        var staticModifier = useInstanceMembers ? "" : "static ";
+        var cultureInfoProperty = useInstanceMembers ? "CultureInfo Culture { get; }" : "CultureInfo? Culture { get; set; }";
         var sb = new StringBuilder();
         sb.AppendLine();
         sb.AppendLine("#nullable enable");
@@ -138,16 +143,24 @@ public sealed class ResxGenerator : IIncrementalGenerator
 
         sb.AppendLine("    internal partial class " + className);
         sb.AppendLine("    {");
-        sb.AppendLine("        private static global::System.Resources.ResourceManager? resourceMan;");
-        sb.AppendLine();
-        sb.AppendLine("        public " + className + "() { }");
+        sb.AppendLine($"        private {staticModifier}global::System.Resources.ResourceManager? resourceMan;");
+        if (useInstanceMembers)
+        {
+            sb.AppendLine($$"""
+
+        public {{className}}(global::System.Globalization.CultureInfo? culture = null)
+        {
+            Culture = culture ?? global::System.Globalization.CultureInfo.CurrentUICulture;
+        }
+""");
+        }
         sb.AppendLine($$"""
 
         /// <summary>
         ///   Returns the cached ResourceManager instance used by this class.
         /// </summary>
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
-        public static global::System.Resources.ResourceManager ResourceManager
+        public {{staticModifier}}global::System.Resources.ResourceManager ResourceManager
         {
             get
             {
@@ -165,9 +178,9 @@ public sealed class ResxGenerator : IIncrementalGenerator
         ///   resource lookups using this strongly typed resource class.
         /// </summary>
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        public static global::System.Globalization.CultureInfo? Culture { get; set; }
+        public {{staticModifier}}global::System.Globalization.{{cultureInfoProperty}}
 
-        {{ReturnNotNullIfNotNull("defaultValue")}}public static object? GetObject(global::System.Globalization.CultureInfo? culture, string name, object? defaultValue)
+        {{ReturnNotNullIfNotNull("defaultValue")}}public {{staticModifier}}object? GetObject(global::System.Globalization.CultureInfo? culture, string name, object? defaultValue)
         {
             culture ??= Culture;
             object? obj = ResourceManager.GetObject(name, culture);
@@ -179,25 +192,25 @@ public sealed class ResxGenerator : IIncrementalGenerator
             return obj;
         }
 
-        public static object? GetObject(global::System.Globalization.CultureInfo? culture, string name)
+        public {{staticModifier}}object? GetObject(global::System.Globalization.CultureInfo? culture, string name)
             => GetObject(culture: culture, name: name, defaultValue: null);
 
-        public static object? GetObject(string name)
+        public {{staticModifier}}object? GetObject(string name)
             => GetObject(culture: null, name: name, defaultValue: null);
 
-        {{ReturnNotNullIfNotNull("defaultValue")}}public static object? GetObject(string name, object? defaultValue)
+        {{ReturnNotNullIfNotNull("defaultValue")}}public {{staticModifier}}object? GetObject(string name, object? defaultValue)
             => GetObject(culture: null, name: name, defaultValue: defaultValue);
 
-        public static global::System.IO.Stream? GetStream(string name)
+        public {{staticModifier}}global::System.IO.Stream? GetStream(string name)
             => GetStream(culture: null, name: name);
 
-        public static global::System.IO.Stream? GetStream(global::System.Globalization.CultureInfo? culture, string name)
+        public {{staticModifier}}global::System.IO.Stream? GetStream(global::System.Globalization.CultureInfo? culture, string name)
             => ResourceManager.GetStream(name, culture ?? Culture);
 
-        public static string? GetString(global::System.Globalization.CultureInfo? culture, string name)
+        public {{staticModifier}}string? GetString(global::System.Globalization.CultureInfo? culture, string name)
             => GetString(culture: culture, name: name, args: null);
 
-        public static string? GetString(global::System.Globalization.CultureInfo? culture, string name, params object?[]? args)
+        public {{staticModifier}}string? GetString(global::System.Globalization.CultureInfo? culture, string name, params object?[]? args)
         {
             culture ??= Culture;
             string? str = ResourceManager.GetString(name, culture);
@@ -216,19 +229,19 @@ public sealed class ResxGenerator : IIncrementalGenerator
             }
         }
 
-        public static string? GetString(string name, params object?[]? args)
+        public {{staticModifier}}string? GetString(string name, params object?[]? args)
             => GetString(culture: null, name: name, args: args);
 
-        {{ReturnNotNullIfNotNull("defaultValue")}}public static string? GetString(string name, string? defaultValue)
+        {{ReturnNotNullIfNotNull("defaultValue")}}public {{staticModifier}}string? GetString(string name, string? defaultValue)
             => GetStringWithDefault(culture: null, name: name, defaultValue: defaultValue, args: null);
 
-        public static string? GetString(string name)
+        public {{staticModifier}}string? GetString(string name)
             => GetStringWithDefault(culture: null, name: name, defaultValue: null, args: null);
 
-        {{ReturnNotNullIfNotNull("defaultValue")}}public static string? GetStringWithDefault(global::System.Globalization.CultureInfo? culture, string name, string? defaultValue)
+        {{ReturnNotNullIfNotNull("defaultValue")}}public {{staticModifier}}string? GetStringWithDefault(global::System.Globalization.CultureInfo? culture, string name, string? defaultValue)
             => GetStringWithDefault(culture: culture, name: name, defaultValue: defaultValue, args: null);
 
-        {{ReturnNotNullIfNotNull("defaultValue")}}public static string? GetStringWithDefault(global::System.Globalization.CultureInfo? culture, string name, string? defaultValue, params object?[]? args)
+        {{ReturnNotNullIfNotNull("defaultValue")}}public {{staticModifier}}string? GetStringWithDefault(global::System.Globalization.CultureInfo? culture, string name, string? defaultValue, params object?[]? args)
         {
             culture ??= Culture;
             string? str = ResourceManager.GetString(name, culture);
@@ -254,10 +267,10 @@ public sealed class ResxGenerator : IIncrementalGenerator
             }
         }
 
-        {{ReturnNotNullIfNotNull("defaultValue")}}public static string? GetStringWithDefault(string name, string? defaultValue, params object?[]? args)
+        {{ReturnNotNullIfNotNull("defaultValue")}}public {{staticModifier}}string? GetStringWithDefault(string name, string? defaultValue, params object?[]? args)
             => GetStringWithDefault(culture: null, name: name, defaultValue: defaultValue, args: args);
 
-        {{ReturnNotNullIfNotNull("defaultValue")}}public static string? GetStringWithDefault(string name, string? defaultValue)
+        {{ReturnNotNullIfNotNull("defaultValue")}}public {{staticModifier}}string? GetStringWithDefault(string name, string? defaultValue)
             => GetStringWithDefault(culture: null, name: name, defaultValue: defaultValue, args: null);
 
 """);
@@ -284,7 +297,7 @@ public sealed class ResxGenerator : IIncrementalGenerator
 
                 sb.AppendLine($$"""
         /// {{comment}}
-        public static string? @{{ToCSharpNameIdentifier(entry.Name)}}
+        public {{staticModifier}}string? @{{ToCSharpNameIdentifier(entry.Name)}}
             => GetString("{{entry.Name}}");
 
 """);
@@ -305,14 +318,14 @@ public sealed class ResxGenerator : IIncrementalGenerator
 
                         sb.AppendLine($$"""
         /// {{comment}}
-        public static string? Format{{ToCSharpNameIdentifier(entry.Name)}}(global::System.Globalization.CultureInfo? provider, {{inParams}})
+        public {{staticModifier}}string? Format{{ToCSharpNameIdentifier(entry.Name)}}(global::System.Globalization.CultureInfo? provider, {{inParams}})
             => GetString(provider, "{{entry.Name}}", {{callParams}});
 
 """);
 
                         sb.AppendLine($$"""
         /// {{comment}}
-        public static string? Format{{ToCSharpNameIdentifier(entry.Name)}}({{inParams}})
+        public {{staticModifier}}string? Format{{ToCSharpNameIdentifier(entry.Name)}}({{inParams}})
             => GetString("{{entry.Name}}", {{callParams}});
 
 """);
@@ -322,7 +335,7 @@ public sealed class ResxGenerator : IIncrementalGenerator
             else
             {
                 sb.AppendLine($$"""
-        public static global::{{entry.FullTypeName}}? @{{ToCSharpNameIdentifier(entry.Name)}}
+        public {{staticModifier}}global::{{entry.FullTypeName}}? @{{ToCSharpNameIdentifier(entry.Name)}}
             => (global::{{entry.FullTypeName}}?)GetObject("{{entry.Name}}");
 
 """);
