@@ -20,6 +20,16 @@ public class ResxGeneratorTests
     }
 
     [RunIfFact(globalizationMode: FactInvariantGlobalizationMode.Disabled)]
+    public void FormatStringWithResourceInstance()
+    {
+        var english = new Resource2(CultureInfo.GetCultureInfo("en-US"));
+        english.FormatHello("world").Should().Be("Hello world!");
+
+        var french = new Resource2(CultureInfo.GetCultureInfo("fr"));
+        french.FormatHello("le monde").Should().Be("Bonjour le monde!");
+    }
+
+    [RunIfFact(globalizationMode: FactInvariantGlobalizationMode.Disabled)]
     public void StringValue()
     {
         CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("en-US");
